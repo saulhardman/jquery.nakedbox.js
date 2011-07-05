@@ -130,20 +130,6 @@ div#viewer{
 	background-color: #fff;
 }
 
-div#viewer:hover::before{
-	content: ' ';
-	width: 30px;
-	height: 30px;
-	display: block;
-	position: absolute;
-	right: -15px;
-	top: -15px;
-	-moz-border-radius: 15px;
-	-webkit-border-radius: 15px;
-	border-radius: 15px;
-	background-color: #000;
-}
-
 div#viewer img#loader{
 	position: absolute;
 	top: 50%;

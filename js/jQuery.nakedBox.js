@@ -40,10 +40,18 @@
 					//Check to see which direction we've gone in and load a new image.
 					if($(this).attr('id')=='nextLink'){
 						index++;
-						loadImageFromLink($next_link.attr('href'));
+						$('img#magnified').animate({'opacity': 0}, options.speed, function(){
+							$(this).remove();
+							$viewer.prepend($loader);
+							loadImageFromLink($next_link.attr('href'));
+						});
 					}else{
-						index--; 
-						loadImageFromLink($previous_link.attr('href'));
+						index--;
+						$('img#magnified').animate({'opacity': 0}, options.speed, function(){
+							$(this).remove();
+							$viewer.prepend($loader);
+							loadImageFromLink($next_link.attr('href'));
+						});
 					};
 					//Add missing links.
 					if($('a#nextLink').length < 1) $next_link.appendTo($viewer);
@@ -62,6 +70,7 @@
 			};
 			
 			//Load in the initial image.
+			$viewer.prepend($loader);
 			loadImageFromLink($element.attr('href'));
 			
 			//Check if this image is part of a 'group' of images.
@@ -69,7 +78,7 @@
 				$images_in_group = $('a[rel='+$element.attr('rel')+']');
 				number_of_images = $images_in_group.length;
 				if(number_of_images > 1){
-					index = 1;
+					index = $images_in_group.index($this);
 					$next_link = $('<a></a>').attr('id', 'nextLink').addClass('navLink').attr('href', $images_in_group.eq(index).attr('href'));
 					$previous_link = $('<a></a>').attr('id', 'previousLink').addClass('navLink');
 					$next_link.appendTo($viewer);
@@ -79,14 +88,6 @@
 		});
 		
 		function loadImageFromLink(image_link){
-			if($('img#magnified').length > 0){
-				$('img#magnified').animate({'opacity': 0}, options.speed, function(){
-					$viewer.prepend($loader);
-					$(this).remove();
-				});
-			}else{
-				$viewer.prepend($loader);
-			};
 			var image = new Image();
 			image.src = image_link;
 			image.onload = function(){
