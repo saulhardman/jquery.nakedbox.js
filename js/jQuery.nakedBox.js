@@ -48,7 +48,7 @@
 							height: 'auto',
 							width: 'auto',
 							margin: '-15px 0 0 -15px'
-						}).html($loader);
+						});
 						
 					});
 					
@@ -93,25 +93,37 @@
 					'id': 'loader'
 				});
 				
+				if ($elements.filter('[rel]').length) {
+					
+					$next_link = $('<a/>', {
+						'id': 'nextLink',
+						'class': 'navLink'
+					});
+				
+					$previous_link = $('<a/>', {
+						'id': 'previousLink',
+						'class': 'navLink'
+					});
+					
+				}
+				
 			}
 			
 			if ($this.attr('rel')) {
-			
-				$next_link = $('<a/>', {
-					'id': 'nextLink',
-					'class': 'navLink'
-				});
-			
-				$previous_link = $('<a/>', {
-					'id': 'previousLink',
-					'class': 'navLink'
-				});
 				
 				currentRel = $this.attr('rel');
 				
 				$currentElements = $elements.filter('[rel='+currentRel+']');
 				
 				currentIndex = $currentElements.index($this);
+			
+			} else {
+			
+				currentRel = undefined;
+				
+				$currentElements = undefined;
+				
+				currentIndex = undefined;
 			
 			}
 			
