@@ -3,114 +3,180 @@
 	$.fn.nakedBox = function(options) {
 
 		var defaults = {
-		  speed: 500
-		};
-		var options = $.extend({}, defaults, options);
+				  speed: 500
+				},
+				options = $.extend({}, defaults, options);
 		
-		var $this = $(this), $overlay, $viewer, $loader, $image, $next_link, $previous_link, $images_in_group, number_of_images, index;
+		var $elements = $(this),
+				$overlay = $('#overlay'),
+				$viewer = $('#viewer'),
+				$loader = $('#loader'),
+				$image,
+				$next_link = $('#nextLink'),
+				$previous_link = $('#prevLink');
+				
+		var currentRel,
+				currentIndex,
+				$currentElements;
 		
-		$this.click(function(e){
+		return $elements.click(function(e){
 		
 			e.preventDefault();
 			
-			var $element = $(this);
+			var $this = $(this);
 			
-			if($('div#overlay').length < 1){
-				$overlay = $('<div></div>').attr({
-						id: 'overlay'
-				})
-				.addClass('shown')
-				.appendTo('body')
-				.click(function(){
-					$overlay.animate({'opacity': 0}, options.speed, function(){
-						$overlay.hide().removeClass('shown');
-						$viewer.css({height: 'auto', width: 'auto', margin: '-15px 0 0 -15px'}).html($loader);
-					});
-				});
-				$viewer = $('<div></div>').attr({
-					id: 'viewer'
-				}).appendTo($overlay);
-				$loader = $('<img/>').attr({
-					src: 'images/imageLoader.gif',
-					id: 'loader'
-				});
-				$viewer.delegate('a.navLink', 'click', function(e){
-					e.preventDefault()
-					e.stopPropagation();
-					//Check to see which direction we've gone in and load a new image.
-					if($(this).attr('id')=='nextLink'){
-						index++;
-						$('img#magnified').animate({'opacity': 0}, options.speed, function(){
-							$(this).remove();
-							$viewer.prepend($loader);
-							loadImageFromLink($next_link.attr('href'));
-						});
-					}else{
-						index--;
-						$('img#magnified').animate({'opacity': 0}, options.speed, function(){
-							$(this).remove();
-							$viewer.prepend($loader);
-							loadImageFromLink($next_link.attr('href'));
-						});
-					};
-					//Add missing links.
-					if($('a#nextLink').length < 1) $next_link.appendTo($viewer);
-					if($('a#prevLink').length < 1) $previous_link.appendTo($viewer);	
-					//Change the href values accordingly.
-					(index != 1 && $('a#nextLink').length > 0) ? $previous_link.attr('href', $images_in_group.eq(index-2).attr('href')) : $previous_link.remove();
-					(index != number_of_images && $('a#nextLink').length > 0) ? $next_link.attr('href', $images_in_group.eq(index+1).attr('href')) : $next_link.remove();
-				});
-			}else{
-				$overlay = $('div#overlay');
-				$viewer = $('div#viewer');
-				$loader = $('img#loader');
+			if ($overlay.length) {
+				
 				$overlay.show().animate({'opacity': 1}, options.speed, function(){
 					$overlay.addClass('shown');
 				});
-			};
+				
+			} else {
+				
+				$overlay = $('<div/>', {
+					'id': 'overlay',
+					'class': 'shown'
+				}).click(function(){
+				
+					$overlay.animate({
+						'opacity': 0
+					}, options.speed, function(){
+					
+						$overlay.hide().removeClass('shown');
+						
+						$viewer.css({
+							height: 'auto',
+							width: 'auto',
+							margin: '-15px 0 0 -15px'
+						}).html($loader);
+						
+					});
+					
+				}).appendTo('body');
+				
+				$viewer = $('<div/>', {
+					id: 'viewer'
+				}).on('click', '.navLink', function(e){
+				
+					e.preventDefault();
+					
+					// Prevents firing the click event for html etc. and closing the modal.
+					
+					e.stopPropagation();
+					
+					// Check to see which direction we've gone in and load a new image.
+					
+					var $this = $(this);
+					
+					if ($this.attr('id') == 'nextLink') {
+					
+						currentIndex++;
+						
+					} else {
+					
+						currentIndex--;
+						
+					}
+					
+					$('#magnified').animate({'opacity': 0}, options.speed, function(){
+					
+						$viewer.html($loader);
+						
+						loadImageFromLink($this.attr('href'));
+						
+					});
+					
+				}).appendTo($overlay);
+				
+				$loader = $('<img>', {
+					'src': 'img/imageLoader.gif',
+					'id': 'loader'
+				});
+				
+			}
 			
-			//Load in the initial image.
-			$viewer.prepend($loader);
-			loadImageFromLink($element.attr('href'));
+			if ($this.attr('rel')) {
 			
-			//Check if this image is part of a 'group' of images.
-			if($element.attr('rel') != undefined){
-				$images_in_group = $('a[rel='+$element.attr('rel')+']');
-				number_of_images = $images_in_group.length;
-				if(number_of_images > 1){
-					index = $images_in_group.index($this);
-					$next_link = $('<a></a>').attr('id', 'nextLink').addClass('navLink').attr('href', $images_in_group.eq(index).attr('href'));
-					$previous_link = $('<a></a>').attr('id', 'previousLink').addClass('navLink');
-					$next_link.appendTo($viewer);
-				}
-			};
+				$next_link = $('<a/>', {
+					'id': 'nextLink',
+					'class': 'navLink'
+				});
+			
+				$previous_link = $('<a/>', {
+					'id': 'previousLink',
+					'class': 'navLink'
+				});
+				
+				currentRel = $this.attr('rel');
+				
+				$currentElements = $elements.filter('[rel='+currentRel+']');
+				
+				currentIndex = $currentElements.index($this);
+			
+			}
+			
+			// Load in the initial image.
+			
+			$viewer.html($loader);
+			
+			loadImageFromLink($this.attr('href'));
 			
 		});
 		
-		function loadImageFromLink(image_link){
+		function loadImageFromLink (image_url) {
+		
 			var image = new Image();
-			image.src = image_link;
+			
+			image.src = image_url;
+			
 			image.onload = function(){
-				var h = image.height;
-				var padding_height = parseInt($viewer.css('padding-top')) + parseInt($viewer.css('padding-bottom'));
-				var w = image.width;
-				var padding_width = parseInt($viewer.css('padding-left')) + parseInt($viewer.css('padding-right'));
-				$image = $(image).attr({
-					id: 'magnified'
-				});
+			
+				var image_height = image.height,
+						padding_height = parseInt($viewer.css('padding-top')) + parseInt($viewer.css('padding-bottom')),
+						image_width = image.width,
+						padding_width = parseInt($viewer.css('padding-left')) + parseInt($viewer.css('padding-right'));
+						
+				$image = $(image).attr('id', 'magnified');
+				
 				$viewer.animate({
-					height: h,
-					width: w,
-					'margin-top': -h/2-padding_height/2,
-					'margin-left': -w/2-padding_width/2
+					height: image_height,
+					width: image_width,
+					'margin-top': - (image_height / 2) - (padding_height / 2),
+					'margin-left': - (image_width / 2) - (padding_width / 2)
 				}, options.speed, function(){
-					$('img#loader').remove();
-					$viewer.prepend($image);
+					$viewer.html($image);
+					if ($currentElements != undefined) setNavigation();
 					$image.animate({'opacity': 1}, options.speed);
 				});
-			};
-		};
+				
+			}
+			
+		}
+		
+		function setNavigation () {
+			
+			if ($currentElements.length) {
+				
+				if (currentIndex == 0) {
+					
+					$next_link.attr('href', $currentElements.eq(currentIndex+1).attr('href')).appendTo($viewer);
+					
+				} else if (currentIndex > 0 && currentIndex < $currentElements.length - 1) {
+				
+					$next_link.attr('href', $currentElements.eq(currentIndex+1).attr('href')).appendTo($viewer);
+					
+					$previous_link.attr('href', $currentElements.eq(currentIndex-1).attr('href')).appendTo($viewer);
+				
+				} else {
+					
+					$previous_link.attr('href', $currentElements.eq(currentIndex-1).attr('href')).appendTo($viewer);
+				
+				}
+				
+			}
+			
+		}
 
-	};
+	}
 
 })(jQuery);
