@@ -14,6 +14,7 @@
 					boxShadow: '0 0 10px rgba(20, 20, 20, .8), 0 0 40px rgba(20, 20, 20, .8)',
 					borderColor: '#fff',
 					borderSize: 0,
+					pathToImage: 'img/imageLoader.gif',
 					speed: 500,
 					keyboard: true
 				},
@@ -66,7 +67,7 @@
 				/* Loader */
 				$loader = $('<img>', {
 					'id': 'loader',
-					'src': 'img/imageLoader.gif',
+					'src': options.pathToImage,
 					'alt': 'Loader'
 				}).css({
 					position: 'absolute',
