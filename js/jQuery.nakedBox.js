@@ -1,62 +1,122 @@
 (function($){
 
 	$.fn.nakedBox = function(options) {
-
+		
+		/* Set defaults and overwrite with custom settings */
 		var defaults = {
-				  speed: 500
+					overlayColor: 'rgba(20, 20, 20, .8)',
+					boxShadow: '0 0 10px rgba(20, 20, 20, .8), 0 0 40px rgba(20, 20, 20, .8)',
+					borderColor: '#fff',
+					borderSize: 0,
+				  speed: 500,
+				  keyboard: true
 				},
 				options = $.extend({}, defaults, options);
 		
-		var $elements = $(this),
-				$overlay = $('#overlay'),
-				$viewer = $('#viewer'),
-				$loader = $('#loader'),
-				$image,
-				$next_link = $('#nextLink'),
-				$previous_link = $('#prevLink');
-				
-		var currentRel,
-				currentIndex,
-				$currentElements;
+		/* Element caching */
+		var $elements = $(this), $overlay, $viewer, $loader, $image, $next_link, $previous_link, $currentElements, currentRel, currentIndex;
 		
-		return $elements.click(function(e){
-		
-			e.preventDefault();
+		/* nakedBox namespace */
+		var nakedBox = {
 			
-			var $this = $(this);
+			initialised: false,
 			
-			if ($overlay.length) {
+			createElements: function () {
+			
+				// Create all of the html elements if they don't already exist.
 				
-				$overlay.show().animate({'opacity': 1}, options.speed, function(){
-					$overlay.addClass('shown');
+				/* Overlay */
+				$overlay = $('<div/>', {
+					'id': 'overlay'
+				}).css({
+					top: 0,
+					left: 0,
+					height: '100%',
+					width: '100%',
+					position: 'fixed',
+					backgroundColor: options.overlayColor
 				});
 				
-			} else {
+				/* Viewer */
+				$viewer = $('<div/>', {
+					id: 'viewer'
+				});
 				
-				$overlay = $('<div/>', {
-					'id': 'overlay',
-					'class': 'shown'
-				}).click(function(){
+				$viewer.css({
+					position: 'absolute',
+					top: '50%',
+					left: '50%',
+					marginTop: - ($viewer.height() + (options.borderSize * 2)) / 2,
+					marginLeft: - ($viewer.width() + (options.borderSize * 2)) / 2,
+					padding: options.borderSize,
+					backgroundColor: options.borderColor,
+					boxShadow: options.boxShadow
+				});
 				
-					$overlay.animate({
-						'opacity': 0
-					}, options.speed, function(){
+				/* Loader */
+				$loader = $('<img>', {
+					'id': 'loader',
+					'src': 'img/imageLoader.gif',
+					'alt': 'Loader'
+				}).css({
+					position: 'absolute',
+					top: '50%',
+					left: '50%',
+					margin: '-8px 0 0 -8px'
+				});
+				
+				/* Navigation */
+				if ($elements.filter('[rel]').length > 0) {
+					
+					var nav_link_css = {
+						position: 'absolute',
+						height: '100%',
+						width: '50%',
+						top: 0,
+						opacity: 0,
+						backgroundColor: '#fff'
+					};
+					
+					$next_link = $('<a/>', {
+						'id': 'nextLink',
+						'class': 'navLink'
+					}).css(nav_link_css).css('right', 0);
+				
+					$previous_link = $('<a/>', {
+						'id': 'previousLink',
+						'class': 'navLink'
+					}).css(nav_link_css).css('left', 0);
+					
+				}
+				
+				$overlay.append($viewer).appendTo('body');
+			
+			},
+			
+			bindEventListeners: function () {
+			
+				// Bind event listeners to all of the key elements.
+				
+				/* Overlay */
+				$overlay.click(function(){
+				
+					$overlay.fadeTo(options.speed, 0, function(){
 					
 						$overlay.hide().removeClass('shown');
 						
 						$viewer.css({
-							height: 'auto',
-							width: 'auto',
-							margin: '-15px 0 0 -15px'
+							height: 16,
+							width: 16,
+							marginTop: - (16 + (options.borderSize * 2)) / 2,
+							marginLeft: - (16 + (options.borderSize * 2)) / 2
 						});
 						
 					});
 					
-				}).appendTo('body');
+				});
 				
-				$viewer = $('<div/>', {
-					id: 'viewer'
-				}).on('click', '.navLink', function(e){
+				/* Viewer */
+				$viewer.on('click', '.navLink', function(e){
 				
 					e.preventDefault();
 					
@@ -78,36 +138,143 @@
 						
 					}
 					
-					$('#magnified').animate({'opacity': 0}, options.speed, function(){
-					
-						$viewer.html($loader);
+					$image.fadeTo(options.speed, 0, function(){
 						
-						loadImageFromLink($this.attr('href'));
+						$(this).detach();
+						
+						$viewer.append($loader);
+						
+						$next_link.add($previous_link).detach();
+						
+						nakedBox.loadImage($this.attr('href'));
 						
 					});
 					
-				}).appendTo($overlay);
-				
-				$loader = $('<img>', {
-					'src': 'img/imageLoader.gif',
-					'id': 'loader'
 				});
 				
-				if ($elements.filter('[rel]').length) {
+				/* Navigation */
+				$next_link.add($previous_link).hover(function(){
+				
+					$(this).css('opacity', .2);
+				
+				}, function(){
+				
+					$(this).css('opacity', 0);
+				
+				});
+				
+				/* Keyboard navigation */
+				if (options.keyboard) {
+				
+					$(document).keydown(function(e){
 					
-					$next_link = $('<a/>', {
-						'id': 'nextLink',
-						'class': 'navLink'
+						switch(e.keyCode) {
+							
+							// Escape keydown
+							case 27:
+								$overlay.trigger('click');
+							break;
+							
+							// Left arrow keydown
+							case 37:
+								$previous_link.trigger('click');
+							break;
+							
+							// Right arrow keydown
+							case 39:
+								$next_link.trigger('click');
+							break;
+							
+						}
+						
 					});
 				
-					$previous_link = $('<a/>', {
-						'id': 'previousLink',
-						'class': 'navLink'
+				}
+			
+			},
+			
+			loadImage: function (image_url) {
+			
+				// Load image from an URL.
+				
+				var image = new Image();
+				
+				image.src = image_url;
+				
+				image.onload = function(){
+							
+					$image = $(image).attr('id', 'magnified').css({
+									   opacity: 0,
+									   filter: 'alpha(opacity=0)'
+									 });
+					
+					$viewer.animate({
+						height: image.height,
+						width: image.width,
+						marginTop: - (image.height + (options.borderSize * 2)) / 2,
+						marginLeft: - (image.width + (options.borderSize * 2)) / 2
+					}, options.speed, function(){
+						$loader.detach();
+						$viewer.append($image);
+						if (currentRel != null) nakedBox.setNavigation();
+						$image.animate({'opacity': 1}, options.speed);
 					});
 					
 				}
+			
+			},
+			
+			setNavigation: function () {
+			
+				// Show/hide next and previous links appropriately.
 				
+				$next_link.add($previous_link).detach();
+				
+				if ($currentElements.length) {
+					
+					if (currentIndex == 0) {
+						
+						$next_link.attr('href', $currentElements.eq(currentIndex+1).attr('href')).appendTo($viewer);
+						
+					} else if (currentIndex > 0 && currentIndex < $currentElements.length - 1) {
+					
+						$next_link.attr('href', $currentElements.eq(currentIndex+1).attr('href')).appendTo($viewer);
+						
+						$previous_link.attr('href', $currentElements.eq(currentIndex-1).attr('href')).appendTo($viewer);
+					
+					} else {
+						
+						$previous_link.attr('href', $currentElements.eq(currentIndex-1).attr('href')).appendTo($viewer);
+					
+					}
+					
+				}
+			
 			}
+		
+		}
+		
+		return $elements.click(function(e){
+		
+			e.preventDefault();
+			
+			var $this = $(this);
+			
+			if (nakedBox.initialised === false) {
+			
+				nakedBox.createElements();
+				
+				nakedBox.bindEventListeners();
+			
+				nakedBox.initialised = true;
+			
+			}
+			
+			$overlay.show().fadeTo(options.speed, 1, function(){
+			
+				$overlay.addClass('shown');
+				
+			});
 			
 			if ($this.attr('rel')) {
 				
@@ -119,75 +286,21 @@
 			
 			} else {
 			
-				currentRel = undefined;
-				
-				$currentElements = undefined;
-				
-				currentIndex = undefined;
+				currentRel = null;
 			
 			}
 			
 			// Load in the initial image.
 			
-			$viewer.html($loader);
+			$viewer.append($loader);
 			
-			loadImageFromLink($this.attr('href'));
+			$next_link.add($previous_link).add($image).detach();
 			
+			nakedBox.loadImage($this.attr('href'));
+			
+			return false;
+		
 		});
-		
-		function loadImageFromLink (image_url) {
-		
-			var image = new Image();
-			
-			image.src = image_url;
-			
-			image.onload = function(){
-			
-				var image_height = image.height,
-						padding_height = parseInt($viewer.css('padding-top')) + parseInt($viewer.css('padding-bottom')),
-						image_width = image.width,
-						padding_width = parseInt($viewer.css('padding-left')) + parseInt($viewer.css('padding-right'));
-						
-				$image = $(image).attr('id', 'magnified');
-				
-				$viewer.animate({
-					height: image_height,
-					width: image_width,
-					'margin-top': - (image_height / 2) - (padding_height / 2),
-					'margin-left': - (image_width / 2) - (padding_width / 2)
-				}, options.speed, function(){
-					$viewer.html($image);
-					if ($currentElements != undefined) setNavigation();
-					$image.animate({'opacity': 1}, options.speed);
-				});
-				
-			}
-			
-		}
-		
-		function setNavigation () {
-			
-			if ($currentElements.length) {
-				
-				if (currentIndex == 0) {
-					
-					$next_link.attr('href', $currentElements.eq(currentIndex+1).attr('href')).appendTo($viewer);
-					
-				} else if (currentIndex > 0 && currentIndex < $currentElements.length - 1) {
-				
-					$next_link.attr('href', $currentElements.eq(currentIndex+1).attr('href')).appendTo($viewer);
-					
-					$previous_link.attr('href', $currentElements.eq(currentIndex-1).attr('href')).appendTo($viewer);
-				
-				} else {
-					
-					$previous_link.attr('href', $currentElements.eq(currentIndex-1).attr('href')).appendTo($viewer);
-				
-				}
-				
-			}
-			
-		}
 
 	}
 
