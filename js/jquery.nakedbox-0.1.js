@@ -2,7 +2,7 @@
  * jQuery Naked Box 0.1
  * https://github.com/saulhardman/jquery.nakedbox.js
  * Saul Hardman (@saulhardman)
-**/
+ */
 
 (function($){
 
@@ -26,6 +26,8 @@
 		var nakedBox = {
 			
 			initialised: false,
+			
+			hasNavigation: false,
 			
 			inProgress: false,
 			
@@ -73,8 +75,28 @@
 					margin: '-8px 0 0 -8px'
 				});
 				
-				/* Navigation */
-				if ($elements.filter('[rel]').length > 0) {
+				/* Navigation (is it necessary?) */
+				var $elements_with_rel = $elements.filter('[rel]');
+				
+				if ($elements_with_rel.length > 0) {
+				
+					$elements_with_rel.each(function(){
+					
+						var $this = $(this);
+						
+						if ($elements_with_rel.filter('[rel='+$this.attr('rel')+']').length > 1) {
+						
+							nakedBox.hasNavigation = true;
+						
+							return false;
+						
+						}
+					
+					});
+				
+				}
+				
+				if (nakedBox.hasNavigation) {
 					
 					var nav_link_css = {
 						position: 'absolute',
@@ -170,16 +192,20 @@
 					
 				});
 				
-				/* Navigation */
-				$next_link.add($previous_link).hover(function(){
+				if (nakedBox.hasNavigation) {
 				
-					$(this).css('opacity', 0.2);
+					/* Navigation */
+					$next_link.add($previous_link).hover(function(){
+					
+						$(this).css('opacity', 0.2);
+					
+					}, function(){
+					
+						$(this).css('opacity', 0);
+					
+					});
 				
-				}, function(){
-				
-					$(this).css('opacity', 0);
-				
-				});
+				}
 				
 				/* Keyboard navigation */
 				if (options.keyboard) {
@@ -234,7 +260,7 @@
 					}, options.speed, function(){
 						$loader.detach();
 						$viewer.append($image);
-						if (currentRel !== null) {
+						if (nakedBox.hasNavigation) {
 							nakedBox.setNavigation();
 						}
 						$image.fadeTo(options.speed, 1, function(){
@@ -298,7 +324,9 @@
 				
 			});
 			
-			if ($this.attr('rel')) {
+			if (nakedBox.hasNavigation) {
+			
+				nakedBox.hasNavigation = true;
 				
 				currentRel = $this.attr('rel');
 				
@@ -306,17 +334,23 @@
 				
 				currentIndex = $currentElements.index($this);
 			
-			} else {
-			
-				currentRel = null;
-			
 			}
 			
 			// Load in the initial image.
 			
 			$viewer.append($loader);
 			
-			$next_link.add($previous_link).add($image).detach();
+			if (typeof $image !== 'undefined') {
+			
+				$image.detach();
+			
+			}
+			
+			if (nakedBox.hasNavigation) {
+			
+				$next_link.add($previous_link).detach();
+			
+			}
 			
 			nakedBox.loadImage($this.attr('href'));
 			
