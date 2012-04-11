@@ -1,6 +1,6 @@
 (function($){
 
-	$.fn.nakedBox = function(options) {
+	$.fn.nakedBox = function(_options) {
 		
 		/* Set defaults and overwrite with custom settings */
 		var defaults = {
@@ -8,10 +8,10 @@
 					boxShadow: '0 0 10px rgba(20, 20, 20, .8), 0 0 40px rgba(20, 20, 20, .8)',
 					borderColor: '#fff',
 					borderSize: 0,
-				  speed: 500,
-				  keyboard: true
+					speed: 500,
+					keyboard: true
 				},
-				options = $.extend({}, defaults, options);
+				options = $.extend({}, defaults, _options);
 		
 		/* Element caching */
 		var $elements = $(this), $overlay, $viewer, $loader, $image, $next_link, $previous_link, $currentElements, currentRel, currentIndex;
@@ -128,7 +128,7 @@
 					
 					var $this = $(this);
 					
-					if ($this.attr('id') == 'nextLink') {
+					if ($this.attr('id') === 'nextLink') {
 					
 						currentIndex++;
 						
@@ -155,7 +155,7 @@
 				/* Navigation */
 				$next_link.add($previous_link).hover(function(){
 				
-					$(this).css('opacity', .2);
+					$(this).css('opacity', 0.2);
 				
 				}, function(){
 				
@@ -204,9 +204,9 @@
 				image.onload = function(){
 							
 					$image = $(image).attr('id', 'magnified').css({
-									   opacity: 0,
-									   filter: 'alpha(opacity=0)'
-									 });
+						opacity: 0,
+						filter: 'alpha(opacity=0)'
+					});
 					
 					$viewer.animate({
 						height: image.height,
@@ -216,11 +216,13 @@
 					}, options.speed, function(){
 						$loader.detach();
 						$viewer.append($image);
-						if (currentRel != null) nakedBox.setNavigation();
+						if (currentRel !== null) {
+							nakedBox.setNavigation();
+						}
 						$image.animate({'opacity': 1}, options.speed);
 					});
 					
-				}
+				};
 			
 			},
 			
@@ -232,7 +234,7 @@
 				
 				if ($currentElements.length) {
 					
-					if (currentIndex == 0) {
+					if (currentIndex === 0) {
 						
 						$next_link.attr('href', $currentElements.eq(currentIndex+1).attr('href')).appendTo($viewer);
 						
@@ -252,7 +254,7 @@
 			
 			}
 		
-		}
+		};
 		
 		return $elements.click(function(e){
 		
@@ -302,6 +304,6 @@
 		
 		});
 
-	}
+	};
 
 })(jQuery);
