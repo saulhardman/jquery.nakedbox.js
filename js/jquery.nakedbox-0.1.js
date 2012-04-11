@@ -27,6 +27,8 @@
 			
 			initialised: false,
 			
+			inProgress: false,
+			
 			createElements: function () {
 			
 				// Create all of the html elements if they don't already exist.
@@ -132,6 +134,16 @@
 					
 					// Check to see which direction we've gone in and load a new image.
 					
+					if (nakedBox.inProgress) {
+					
+						return false;
+						
+					} else {
+					
+						nakedBox.inProgress = true;
+					
+					}
+					
 					var $this = $(this);
 					
 					if ($this.attr('id') === 'nextLink') {
@@ -225,7 +237,9 @@
 						if (currentRel !== null) {
 							nakedBox.setNavigation();
 						}
-						$image.animate({'opacity': 1}, options.speed);
+						$image.fadeTo(options.speed, 1, function(){
+							nakedBox.inProgress = false;
+						});
 					});
 					
 				};
