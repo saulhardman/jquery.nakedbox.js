@@ -1,5 +1,11 @@
-# Features to finish
+## jQuery Naked Box (0.1)
 
-	Comments for individual images
-	Add an option to have CSS only styling (no style injection)
-	Spin.js with .gif fallback
+### Features to finish
+
+	- Comments for individual images
+	- Add an option to have CSS only styling (no style injection)
+	- Spin.js with .gif fallback
+	
+### Feature requests
+
+Feature requests are welcome, feel free to drop them here; otherwise give me a shout on Twitter (@saulhardman)
