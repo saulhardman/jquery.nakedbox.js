@@ -1,4 +1,4 @@
-## jQuery Naked Box (v0.1)
+## jQuery Naked Box 0.1
 
 ### Features to finish
 

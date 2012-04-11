@@ -1,3 +1,9 @@
+/**
+ * jQuery Naked Box 0.1
+ * https://github.com/saulhardman/jquery.nakedbox.js
+ * Saul Hardman (@saulhardman)
+**/
+
 (function($){
 
 	$.fn.nakedBox = function(_options) {
