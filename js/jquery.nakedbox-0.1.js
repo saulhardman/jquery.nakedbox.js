@@ -16,7 +16,13 @@
 					borderSize: 0,
 					pathToImage: 'img/imageLoader.gif',
 					speed: 500,
-					keyboard: true
+					keyboard: true,
+					spinOptions: {
+						lines: 8,
+						length: 6,
+						width: 2,
+						radius: 8
+					}
 				},
 				options = $.extend({}, defaults, _options);
 		
@@ -32,6 +38,8 @@
 			
 			inProgress: false,
 			
+			useSpin: $.isFunction($.fn.spin),
+			
 			createElements: function () {
 			
 				// Create all of the html elements if they don't already exist.
@@ -45,6 +53,9 @@
 					height: '100%',
 					width: '100%',
 					position: 'fixed',
+					backgroundColor: 'transparent',
+					filter: 'progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000050,endColorstr=#99000050)',
+					zoom: 1,
 					backgroundColor: options.overlayColor
 				});
 				
@@ -65,16 +76,21 @@
 				});
 				
 				/* Loader */
-				$loader = $('<img>', {
-					'id': 'loader',
-					'src': options.pathToImage,
-					'alt': 'Loader'
-				}).css({
-					position: 'absolute',
-					top: '50%',
-					left: '50%',
-					margin: '-8px 0 0 -8px'
-				});
+				
+				if (!this.useSpin) {
+				
+					$loader = $('<img>', {
+						'id': 'loader',
+						'src': options.pathToImage,
+						'alt': 'Loader'
+					}).css({
+						position: 'absolute',
+						top: '50%',
+						left: '50%',
+						margin: '-8px 0 0 -8px'
+					});
+				
+				}
 				
 				/* Navigation (is it necessary?) */
 				var $elements_with_rel = $elements.filter('[rel]');
@@ -183,7 +199,11 @@
 						
 						$(this).detach();
 						
-						$viewer.append($loader);
+						if (nakedBox.useSpin) {
+							$viewer.spin(options.spinOptions);
+						} else {
+							$viewer.append($loader);
+						}
 						
 						$next_link.add($previous_link).detach();
 						
@@ -217,17 +237,17 @@
 							
 							// Escape keydown
 							case 27:
-								$overlay.trigger('click');
+								$overlay.css('opacity', 0.2).trigger('click');
 							break;
 							
 							// Left arrow keydown
 							case 37:
-								$previous_link.trigger('click');
+								$previous_link.css('opacity', 0.2).trigger('click');
 							break;
 							
 							// Right arrow keydown
 							case 39:
-								$next_link.trigger('click');
+								$next_link.css('opacity', 0.2).trigger('click');
 							break;
 							
 						}
@@ -259,7 +279,11 @@
 						marginTop: - (image.height + (options.borderSize * 2)) / 2,
 						marginLeft: - (image.width + (options.borderSize * 2)) / 2
 					}, options.speed, function(){
-						$loader.detach();
+						if (nakedBox.useSpin) {
+							$viewer.spin(false);
+						} else {
+							$loader.detach();
+						}
 						$viewer.append($image);
 						if (nakedBox.hasNavigation) {
 							nakedBox.setNavigation();
@@ -277,7 +301,7 @@
 			
 				// Show/hide next and previous links appropriately.
 				
-				$next_link.add($previous_link).detach();
+				$next_link.add($previous_link).css('opacity', 0).detach();
 				
 				if ($currentElements.length) {
 					
@@ -326,8 +350,6 @@
 			});
 			
 			if (nakedBox.hasNavigation) {
-			
-				nakedBox.hasNavigation = true;
 				
 				currentRel = $this.attr('rel');
 				
@@ -338,9 +360,7 @@
 			}
 			
 			// Load in the initial image.
-			
-			$viewer.append($loader);
-			
+					
 			if (typeof $image !== 'undefined') {
 			
 				$image.detach();
