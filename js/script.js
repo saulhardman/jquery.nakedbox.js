@@ -4,6 +4,6 @@ $(document).ready(function(){
 	
 	$('.nakedBox').nakedBox();
 	
-	$('body').backgroundBlur({imagePath: 'img/test_image_1.jpg', imageType: 'jpg', blurRadius: 15});
+	$('body').backgroundBlur({blurRadius: 15});
 
 });

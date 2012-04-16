@@ -27,16 +27,20 @@
 				options = $.extend({}, defaults, _options);
 		
 		/* Element caching */
-		var $elements = $(this), $overlay, $viewer, $loader, $image, $next_link, $previous_link, $currentElements, currentRel, currentIndex;
+		var $elements = $(this), $overlay, $viewer, $loader, $image, $next_link, $previous_link, $figure, $caption, $currentElements, currentGroup, currentIndex;
 		
 		/* nakedBox namespace */
 		var nakedBox = {
+		
+			element: null,
 			
 			initialised: false,
 			
+			inProgress: false,
+			
 			hasNavigation: false,
 			
-			inProgress: false,
+			hasCaptions: false,
 			
 			useSpin: $.isFunction($.fn.spin),
 			
@@ -75,6 +79,43 @@
 					boxShadow: options.boxShadow
 				});
 				
+				/* Figure */
+				
+				$figure = $('<figure/>', {
+					id: 'figure'
+				}).css({
+					position: 'relative'
+				});
+				
+				/* Caption */
+				
+				if ($elements.filter('[data-caption]').length) {
+					
+					this.hasCaptions = true;
+					
+					$caption = $('<figcaption/>', {
+						id: 'caption'
+					}).css({
+						position: 'absolute',
+						display: 'none',
+						left: 0,
+						bottom: 0,
+						background: '#fff',
+						padding: 10,
+						zIndex: 1
+					});
+				
+				}
+				
+				/* Image */
+				
+				$image = $('<img>').attr('id', 'magnified').css({
+					opacity: 0,
+					display: 'block',
+					position: 'relative',
+					zIndex: 2
+				}).appendTo($figure);
+				
 				/* Loader */
 				
 				if (!this.useSpin) {
@@ -93,15 +134,15 @@
 				}
 				
 				/* Navigation (is it necessary?) */
-				var $elements_with_rel = $elements.filter('[rel]');
+				var $elementsWithGroup = $elements.filter('[data-group]');
 				
-				if ($elements_with_rel.length > 0) {
+				if ($elementsWithGroup.length > 0) {
 				
-					$elements_with_rel.each(function(){
+					$elementsWithGroup.each(function(){
 					
 						var $this = $(this);
 						
-						if ($elements_with_rel.filter('[rel='+$this.attr('rel')+']').length > 1) {
+						if ($elementsWithGroup.filter('[data-group='+$this.attr('data-group')+']').length > 1) {
 						
 							nakedBox.hasNavigation = true;
 						
@@ -121,17 +162,18 @@
 						width: '50%',
 						top: 0,
 						opacity: 0,
-						backgroundColor: '#fff'
+						backgroundColor: '#fff',
+						zIndex: 3
 					};
 					
 					$next_link = $('<a/>', {
-						'id': 'nextLink',
-						'class': 'navLink'
+						id: 'nextLink',
+						class: 'navLink'
 					}).css(nav_link_css).css('right', 0);
 				
 					$previous_link = $('<a/>', {
-						'id': 'previousLink',
-						'class': 'navLink'
+						id: 'previousLink',
+						class: 'navLink'
 					}).css(nav_link_css).css('left', 0);
 					
 				}
@@ -268,10 +310,7 @@
 				
 				image.onload = function(){
 							
-					$image = $(image).attr('id', 'magnified').css({
-						opacity: 0,
-						filter: 'alpha(opacity=0)'
-					});
+					$image.attr('src', image.src);
 					
 					$viewer.animate({
 						height: image.height,
@@ -284,12 +323,15 @@
 						} else {
 							$loader.detach();
 						}
-						$viewer.append($image);
+						$figure.append($image).appendTo($viewer);
 						if (nakedBox.hasNavigation) {
 							nakedBox.setNavigation();
 						}
 						$image.fadeTo(options.speed, 1, function(){
 							nakedBox.inProgress = false;
+							if (nakedBox.hasCaptions) {
+								nakedBox.setCaption();
+							}
 						});
 					});
 					
@@ -323,6 +365,28 @@
 					
 				}
 			
+			},
+			
+			setCaption: function () {
+				
+				if (this.element.attr('data-caption')) {
+					
+					var paddingTotal = parseInt($caption.css('padding-left')) + parseInt($caption.css('padding-right'));
+					
+					$caption.text(this.element.attr('data-caption')).css({
+						width: $image.width() - paddingTotal
+					}).show();
+					
+					$caption.appendTo($figure);
+					
+					$caption.animate({
+					
+						bottom: - $caption.outerHeight()
+					
+					}, 200);
+				
+				}
+			
 			}
 		
 		};
@@ -332,6 +396,8 @@
 			e.preventDefault();
 			
 			var $this = $(this);
+			
+			nakedBox.element = $this;
 			
 			if (nakedBox.initialised === false) {
 			
@@ -351,21 +417,21 @@
 			
 			if (nakedBox.hasNavigation) {
 				
-				currentRel = $this.attr('rel');
+				currentGroup = $this.attr('data-group');
 				
-				$currentElements = $elements.filter('[rel='+currentRel+']');
+				$currentElements = $elements.filter('[data-group=' + currentGroup + ']');
 				
 				currentIndex = $currentElements.index($this);
 			
 			}
 			
 			// Load in the initial image.
-					
-			if (typeof $image !== 'undefined') {
 			
-				$image.detach();
+			$figure.detach();
 			
-			}
+			$caption.detach();
+			
+			$image.detach();
 			
 			if (nakedBox.hasNavigation) {
 			
