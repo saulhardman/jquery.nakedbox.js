@@ -60,11 +60,11 @@
 					backgroundColor: 'transparent',
 					filter: 'progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000050,endColorstr=#99000050)',
 					zoom: 1,
-					backgroundColor: options.overlayColor
+					'background-color': options.overlayColor
 				});
 				
 				/* Viewer */
-				$viewer = $('<div/>', {
+				$viewer = $('<figure/>', {
 					id: 'viewer'
 				});
 				
@@ -72,19 +72,13 @@
 					position: 'absolute',
 					top: '50%',
 					left: '50%',
+					width: 0,
+					height: 0,
 					marginTop: - ($viewer.height() + (options.borderSize * 2)) / 2,
 					marginLeft: - ($viewer.width() + (options.borderSize * 2)) / 2,
 					padding: options.borderSize,
 					backgroundColor: options.borderColor,
 					boxShadow: options.boxShadow
-				});
-				
-				/* Figure */
-				
-				$figure = $('<figure/>', {
-					id: 'figure'
-				}).css({
-					position: 'relative'
 				});
 				
 				/* Caption */
@@ -96,13 +90,8 @@
 					$caption = $('<figcaption/>', {
 						id: 'caption'
 					}).css({
-						position: 'absolute',
-						display: 'none',
-						left: 0,
-						bottom: 0,
-						background: '#fff',
 						padding: 10,
-						zIndex: 1
+						background: '#fff'
 					});
 				
 				}
@@ -114,7 +103,7 @@
 					display: 'block',
 					position: 'relative',
 					zIndex: 2
-				}).appendTo($figure);
+				}).appendTo($viewer);
 				
 				/* Loader */
 				
@@ -168,12 +157,12 @@
 					
 					$next_link = $('<a/>', {
 						id: 'nextLink',
-						class: 'navLink'
+						'class': 'navLink'
 					}).css(nav_link_css).css('right', 0);
 				
 					$previous_link = $('<a/>', {
 						id: 'previousLink',
-						class: 'navLink'
+						'class': 'navLink'
 					}).css(nav_link_css).css('left', 0);
 					
 				}
@@ -208,10 +197,6 @@
 				$viewer.on('click', '.navLink', function(e){
 				
 					e.preventDefault();
-					
-					// Prevents firing the click event for html etc. and closing the modal.
-					
-					e.stopPropagation();
 					
 					// Check to see which direction we've gone in and load a new image.
 					
@@ -249,10 +234,22 @@
 						
 						$next_link.add($previous_link).detach();
 						
+						if (nakedBox.hasCaptions) {
+							$caption.detach();
+						}
+						
 						nakedBox.loadImage($this.attr('href'));
 						
 					});
 					
+					return false;
+					
+				}).click(function(e){
+				
+					// Prevents firing the click event for overlay and closing the modal.
+					
+					e.stopPropagation();
+				
 				});
 				
 				if (nakedBox.hasNavigation) {
@@ -304,7 +301,8 @@
 			
 				// Load image from an URL.
 				
-				var image = new Image();
+				var image = new Image(),
+						dimensions = {};
 				
 				image.src = image_url;
 				
@@ -312,27 +310,36 @@
 							
 					$image.attr('src', image.src);
 					
+					dimensions.width = image.width;
+					dimensions.height = image.height;
+					
+					$image.css('opacity', 0).appendTo($viewer);
+					
+					if (nakedBox.hasCaptions) {
+						dimensions.height += nakedBox.setCaption();
+					}
+					
+					if (nakedBox.hasNavigation) {
+						nakedBox.setNavigation();
+					}
+					
 					$viewer.animate({
-						height: image.height,
-						width: image.width,
-						marginTop: - (image.height + (options.borderSize * 2)) / 2,
-						marginLeft: - (image.width + (options.borderSize * 2)) / 2
+						width: dimensions.width,
+						height: dimensions.height,
+						marginLeft: - (dimensions.width + (options.borderSize * 2)) / 2,
+						marginTop: - (dimensions.height + (options.borderSize * 2)) / 2
 					}, options.speed, function(){
 						if (nakedBox.useSpin) {
 							$viewer.spin(false);
 						} else {
 							$loader.detach();
 						}
-						$figure.append($image).appendTo($viewer);
-						if (nakedBox.hasNavigation) {
-							nakedBox.setNavigation();
-						}
 						$image.fadeTo(options.speed, 1, function(){
 							nakedBox.inProgress = false;
-							if (nakedBox.hasCaptions) {
-								nakedBox.setCaption();
-							}
 						});
+						if (nakedBox.hasCaptions) {
+							$caption.fadeTo(options.speed, 1);
+						}
 					});
 					
 				};
@@ -369,21 +376,42 @@
 			
 			setCaption: function () {
 				
-				if (this.element.attr('data-caption')) {
+				var $this;
+				
+				if (nakedBox.hasNavigation) {
 					
-					var paddingTotal = parseInt($caption.css('padding-left')) + parseInt($caption.css('padding-right'));
+					if ($currentElements.length) {
 					
-					$caption.text(this.element.attr('data-caption')).css({
-						width: $image.width() - paddingTotal
+						$this = $currentElements.eq(currentIndex);
+					
+					} else {
+					
+						$this = nakedBox.element;
+					
+					}
+				
+				} else {
+				
+					$this = nakedBox.element;
+				
+				}
+				
+				if (typeof $this.data('caption') !== 'undefined') {
+					
+					var paddingTotal = parseInt($caption.css('padding-left'), 10) + parseInt($caption.css('padding-right'), 10);
+					
+					$caption.text($this.data('caption')).css({
+						width: $image.width() - paddingTotal,
+						opacity: 0
 					}).show();
 					
-					$caption.appendTo($figure);
+					$caption.appendTo($viewer);
 					
-					$caption.animate({
-					
-						bottom: - $caption.outerHeight()
-					
-					}, 200);
+					return $caption.outerHeight();
+				
+				} else {
+				
+					return 0;
 				
 				}
 			
@@ -426,8 +454,6 @@
 			}
 			
 			// Load in the initial image.
-			
-			$figure.detach();
 			
 			$caption.detach();
 			
