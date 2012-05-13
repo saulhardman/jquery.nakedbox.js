@@ -180,13 +180,13 @@
 				
 					$overlay.fadeTo(options.speed, 0, function(){
 					
-						$overlay.hide().removeClass('shown');
+						$overlay.hide().css('opacity', 0.2).removeClass('shown');
 						
 						$viewer.css({
-							height: 16,
-							width: 16,
-							marginTop: - (16 + (options.borderSize * 2)) / 2,
-							marginLeft: - (16 + (options.borderSize * 2)) / 2
+							height: 0,
+							width: 0,
+							marginTop: - (0 + (options.borderSize * 2)) / 2,
+							marginLeft: - (0 + (options.borderSize * 2)) / 2
 						});
 						
 					});
@@ -234,13 +234,17 @@
 						
 						$next_link.add($previous_link).detach();
 						
-						if (nakedBox.hasCaptions) {
-							$caption.detach();
-						}
-						
 						nakedBox.loadImage($this.attr('href'));
 						
 					});
+					
+					if (nakedBox.hasCaptions) {
+					
+						$caption.fadeTo(options.speed, 0, function(){
+							$caption.detach();
+						});
+						
+					}
 					
 					return false;
 					
@@ -276,7 +280,7 @@
 							
 							// Escape keydown
 							case 27:
-								$overlay.css('opacity', 0.2).trigger('click');
+								$overlay.trigger('click');
 							break;
 							
 							// Left arrow keydown
@@ -323,17 +327,18 @@
 						nakedBox.setNavigation();
 					}
 					
+					if (nakedBox.useSpin) {
+						$viewer.spin(false);
+					} else {
+						$loader.detach();
+					}
+					
 					$viewer.animate({
 						width: dimensions.width,
 						height: dimensions.height,
 						marginLeft: - (dimensions.width + (options.borderSize * 2)) / 2,
 						marginTop: - (dimensions.height + (options.borderSize * 2)) / 2
 					}, options.speed, function(){
-						if (nakedBox.useSpin) {
-							$viewer.spin(false);
-						} else {
-							$loader.detach();
-						}
 						$image.fadeTo(options.speed, 1, function(){
 							nakedBox.inProgress = false;
 						});
@@ -455,7 +460,9 @@
 			
 			// Load in the initial image.
 			
-			$caption.detach();
+			if (nakedBox.hasCaptions) {
+				$caption.detach();
+			}
 			
 			$image.detach();
 			
